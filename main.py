@@ -15,152 +15,73 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import argparse
+import fire
 import tensorflow as tf
+
 tf.set_random_seed(228)
 from model import Artgan
 
-def parse_list(str_value):
-    if ',' in str_value:
-        str_value = str_value.split(',')
-    else:
-        str_value = [str_value]
-    return str_value
+
+def main(model_name='model1', phase='train', image_size=256 * 3, ptad='./data/vincent-van-gogh_road-with-cypresses-1890', ptcd=None, total_steps=int(3e5),
+         batch_size=1, lr=0.0002, save_freq=1000, ngf=32, ndf=64, dlw=1., tlw=100., flw=100., dsr=0.8, ii_dir=None, save_dir=None, ckpt_nmbr=None):
+    """
+
+    Args:
+        model_name: ('model1') Name of the model
+        phase: ('train') Specify current phase: train or inference.
+        image_size (int): (256 * 3) For training phase: will crop out images of this particular size.
+                                    For inference phase: each input image will have the smallest side of this size.
+                                    For inference recommended size is 1280.
+        ptad (str): path_to_art_dataset : Directory with paintings representing style we want to learn.
+        ptcd (str): path_to_content_dataset: Path to Places365 training dataset.
+        total_steps (int): (3e5) Total number of steps
+        batch_size (int): (1) # images in batch
+        lr (float): (0.0002) initial learning rate for adam
+        save_freq (int): (1000) Save model every save_freq steps
+        ngf (int): (32) Number of filters in first conv layer of generator(encoder-decoder).
+        ndf (int): (64) Number of filters in first conv layer of discriminator.
+        dlw (float): (1.) discr_loss_weight: Weight of discriminator loss.
+        tlw (float): (100.) transformer_loss_weight: Weight of transformer loss.
+        flw (float): (100.) feature_loss_weight: Weight of feature loss.
+        dsr: (float): (0.8) discr_success_rate: Rate of trials that discriminator will win on average.
+        ii_dir: (list): inference_images_dir: Directory with images we want to process.
+        save_dir (str): Directory to save inference output images. If not specified will save in the model directory.
+        ckpt_nmbr (int): Checkpoint number we want to use for inference. Might be None (unspecified), then the latest available will be used.
 
 
-parser = argparse.ArgumentParser(description='')
+    Returns:
 
-# ========================== GENERAL PARAMETERS ========================= #
-parser.add_argument('--model_name',
-                    dest='model_name',
-                    default='model1',
-                    help='Name of the model')
-parser.add_argument('--phase',
-                    dest='phase',
-                    default='train',
-                    help='Specify current phase: train or inference.')
-parser.add_argument('--image_size',
-                    dest='image_size',
-                    type=int,
-                    default=256*3,
-                    help='For training phase: will crop out images of this particular size.'
-                         'For inference phase: each input image will have the smallest side of this size. '
-                         'For inference recommended size is 1280.')
-
-
-# ========================= TRAINING PARAMETERS ========================= #
-parser.add_argument('--ptad',
-                    dest='path_to_art_dataset',
-                    type=str,
-                    #default='./data/vincent-van-gogh_paintings/',
-                    default='./data/vincent-van-gogh_road-with-cypresses-1890',
-                    help='Directory with paintings representing style we want to learn.')
-parser.add_argument('--ptcd',
-                    dest='path_to_content_dataset',
-                    type=str,
-                    default=None,
-                    help='Path to Places365 training dataset.')
-
-
-parser.add_argument('--total_steps',
-                    dest='total_steps',
-                    type=int,
-                    default=int(3e5),
-                    help='Total number of steps')
-
-parser.add_argument('--batch_size',
-                    dest='batch_size',
-                    type=int,
-                    default=1,
-                    help='# images in batch')
-parser.add_argument('--lr',
-                    dest='lr',
-                    type=float,
-                    default=0.0002,
-                    help='initial learning rate for adam')
-parser.add_argument('--save_freq',
-                    dest='save_freq',
-                    type=int,
-                    default=1000,
-                    help='Save model every save_freq steps')
-parser.add_argument('--ngf',
-                    dest='ngf',
-                    type=int,
-                    default=32,
-                    help='Number of filters in first conv layer of generator(encoder-decoder).')
-parser.add_argument('--ndf',
-                    dest='ndf',
-                    type=int,
-                    default=64,
-                    help='Number of filters in first conv layer of discriminator.')
-
-# Weights of different losses.
-parser.add_argument('--dlw',
-                    dest='discr_loss_weight',
-                    type=float,
-                    default=1.,
-                    help='Weight of discriminator loss.')
-parser.add_argument('--tlw',
-                    dest='transformer_loss_weight',
-                    type=float,
-                    default=100.,
-                    help='Weight of transformer loss.')
-parser.add_argument('--flw',
-                    dest='feature_loss_weight',
-                    type=float,
-                    default=100.,
-                    help='Weight of feature loss.')
-parser.add_argument('--dsr',
-                    dest='discr_success_rate',
-                    type=float,
-                    default=0.8,
-                    help='Rate of trials that discriminator will win on average.')
-
-
-# ========================= INFERENCE PARAMETERS ========================= #
-parser.add_argument('--ii_dir',
-                    dest='inference_images_dir',
-                    type=parse_list,
-                    default=['./data/sample_photographs/'],
-                    help='Directory with images we want to process.')
-parser.add_argument('--save_dir',
-                    type=str,
-                    default=None,
-                    help='Directory to save inference output images.'
-                         'If not specified will save in the model directory.')
-parser.add_argument('--ckpt_nmbr',
-                    dest='ckpt_nmbr',
-                    type=int,
-                    default=None,
-                    help='Checkpoint number we want to use for inference. '
-                         'Might be None(unspecified), then the latest available will be used.')
-
-args = parser.parse_args()
-
-
-def main(_):
+    """
+    path_to_art_dataset = ptad
+    path_to_content_dataset = ptcd
+    discr_loss_weight = dlw
+    transformer_loss_weight = tlw
+    feature_loss_weight = flw
+    discr_success_rate = dsr
+    inference_images_dir = ii_dir
 
     tfconfig = tf.ConfigProto(allow_soft_placement=False)
     tfconfig.gpu_options.allow_growth = True
     with tf.Session(config=tfconfig) as sess:
-        model = Artgan(sess, args)
+        model = Artgan(sess, model_name, batch_size, image_size, total_steps, save_freq, lr, ngf, ndf, phase, path_to_content_dataset, path_to_art_dataset, discr_loss_weight,
+                       transformer_loss_weight, feature_loss_weight)
 
-        if args.phase == 'train':
-            model.train(args, ckpt_nmbr=args.ckpt_nmbr)
-        if args.phase == 'inference' or args.phase == 'test':
+        if phase == 'train':
+            model.train(discr_success_rate, ckpt_nmbr=ckpt_nmbr)
+        if phase == 'inference' or phase == 'test':
             print("Inference.")
-            model.inference(args, args.inference_images_dir, resize_to_original=False,
-                            to_save_dir=args.save_dir,
-                            ckpt_nmbr=args.ckpt_nmbr)
+            model.inference(inference_images_dir, resize_to_original=False,
+                            to_save_dir=save_dir,
+                            ckpt_nmbr=ckpt_nmbr)
 
-        if args.phase == 'inference_on_frames' or args.phase == 'test_on_frames':
+        if phase == 'inference_on_frames' or phase == 'test_on_frames':
             print("Inference on frames sequence.")
-            model.inference_video(args,
-                                  path_to_folder=args.inference_images_dir[0],
+            model.inference_video(path_to_folder=inference_images_dir[0],
                                   resize_to_original=False,
-                                  to_save_dir=args.save_dir,
-                                  ckpt_nmbr = args.ckpt_nmbr)
+                                  to_save_dir=save_dir,
+                                  ckpt_nmbr=ckpt_nmbr)
         sess.close()
 
+
 if __name__ == '__main__':
-    tf.app.run()
+    fire.Fire(main)

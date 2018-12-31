@@ -34,8 +34,9 @@ import img_augm
 
 
 class Artgan(object):
-    def __init__(self, sess, args):
-        self.model_name = args.model_name
+    def __init__(self, sess, model_name, batch_size, image_size, total_steps, save_freq, lr, ngf, ndf, phase, path_to_content_dataset, path_to_art_dataset, discr_loss_weight,
+                 transformer_loss_weight, feature_loss_weight):
+        self.model_name = model_name
         self.root_dir = './models'
         self.checkpoint_dir = os.path.join(self.root_dir, self.model_name, 'checkpoint')
         self.checkpoint_long_dir = os.path.join(self.root_dir, self.model_name, 'checkpoint_long')
@@ -44,8 +45,8 @@ class Artgan(object):
         self.logs_dir = os.path.join(self.root_dir, self.model_name, 'logs')
 
         self.sess = sess
-        self.batch_size = args.batch_size
-        self.image_size = args.image_size
+        self.batch_size = batch_size
+        self.image_size = image_size
 
         self.loss = sce_criterion
 
@@ -59,13 +60,13 @@ class Artgan(object):
                               path_to_content_dataset \
                               path_to_art_dataset \
                               discr_loss_weight transformer_loss_weight feature_loss_weight')
-        self.options = OPTIONS._make((args.batch_size, args.image_size,
-                                      args.total_steps, args.save_freq, args.lr,
-                                      args.ngf, args.ndf,
-                                      args.phase == 'train',
-                                      args.path_to_content_dataset,
-                                      args.path_to_art_dataset,
-                                      args.discr_loss_weight, args.transformer_loss_weight, args.feature_loss_weight
+        self.options = OPTIONS._make((batch_size, image_size,
+                                      total_steps, save_freq, lr,
+                                      ngf, ndf,
+                                      phase == 'train',
+                                      path_to_content_dataset,
+                                      path_to_art_dataset,
+                                      discr_loss_weight, transformer_loss_weight, feature_loss_weight
                                       ))
 
         # Create all the folders for saving the model
@@ -165,8 +166,7 @@ class Artgan(object):
                                                                 self.output_photo_discr_predictions.values())}
             self.discr_acc = (tf.add_n(list(self.input_painting_discr_acc.values())) + \
                               tf.add_n(list(self.input_photo_discr_acc.values())) + \
-                              tf.add_n(list(self.output_photo_discr_acc.values()))) / float(len(scale_weight.keys())*3)
-
+                              tf.add_n(list(self.output_photo_discr_acc.values()))) / float(len(scale_weight.keys()) * 3)
 
             # Generator.
             # Predicts ones for both output images.
@@ -183,7 +183,6 @@ class Artgan(object):
                                                                 self.output_photo_discr_predictions.values())}
 
             self.gener_acc = tf.add_n(list(self.output_photo_gener_acc.values())) / float(len(scale_weight.keys()))
-
 
             # Image loss.
             self.img_loss_photo = mse_criterion(transformer_block(self.output_photo),
@@ -216,25 +215,25 @@ class Artgan(object):
             # ============= Write statistics to tensorboard. ================ #
 
             # Discriminator loss summary.
-            s_d1 = [tf.summary.scalar("discriminator/input_painting_discr_loss/"+key, val)
+            s_d1 = [tf.summary.scalar("discriminator/input_painting_discr_loss/" + key, val)
                     for key, val in zip(self.input_painting_discr_loss.keys(), self.input_painting_discr_loss.values())]
-            s_d2 = [tf.summary.scalar("discriminator/input_photo_discr_loss/"+key, val)
+            s_d2 = [tf.summary.scalar("discriminator/input_photo_discr_loss/" + key, val)
                     for key, val in zip(self.input_photo_discr_loss.keys(), self.input_photo_discr_loss.values())]
             s_d3 = [tf.summary.scalar("discriminator/output_photo_discr_loss/" + key, val)
                     for key, val in zip(self.output_photo_discr_loss.keys(), self.output_photo_discr_loss.values())]
             s_d = tf.summary.scalar("discriminator/discr_loss", self.discr_loss)
-            self.summary_discriminator_loss = tf.summary.merge(s_d1+s_d2+s_d3+[s_d])
+            self.summary_discriminator_loss = tf.summary.merge(s_d1 + s_d2 + s_d3 + [s_d])
 
             # Discriminator acc summary.
-            s_d1_acc = [tf.summary.scalar("discriminator/input_painting_discr_acc/"+key, val)
-                    for key, val in zip(self.input_painting_discr_acc.keys(), self.input_painting_discr_acc.values())]
-            s_d2_acc = [tf.summary.scalar("discriminator/input_photo_discr_acc/"+key, val)
-                    for key, val in zip(self.input_photo_discr_acc.keys(), self.input_photo_discr_acc.values())]
+            s_d1_acc = [tf.summary.scalar("discriminator/input_painting_discr_acc/" + key, val)
+                        for key, val in zip(self.input_painting_discr_acc.keys(), self.input_painting_discr_acc.values())]
+            s_d2_acc = [tf.summary.scalar("discriminator/input_photo_discr_acc/" + key, val)
+                        for key, val in zip(self.input_photo_discr_acc.keys(), self.input_photo_discr_acc.values())]
             s_d3_acc = [tf.summary.scalar("discriminator/output_photo_discr_acc/" + key, val)
-                    for key, val in zip(self.output_photo_discr_acc.keys(), self.output_photo_discr_acc.values())]
+                        for key, val in zip(self.output_photo_discr_acc.keys(), self.output_photo_discr_acc.values())]
             s_d_acc = tf.summary.scalar("discriminator/discr_acc", self.discr_acc)
             s_d_acc_g = tf.summary.scalar("discriminator/discr_acc", self.gener_acc)
-            self.summary_discriminator_acc = tf.summary.merge(s_d1_acc+s_d2_acc+s_d3_acc+[s_d_acc])
+            self.summary_discriminator_acc = tf.summary.merge(s_d1_acc + s_d2_acc + s_d3_acc + [s_d_acc])
 
             # Image loss summary.
             s_i1 = tf.summary.scalar("image_loss/photo", self.img_loss_photo)
@@ -266,7 +265,7 @@ class Artgan(object):
                                         options=self.options,
                                         reuse=False)
 
-    def train(self, args, ckpt_nmbr=None):
+    def train(self, discr_success_rate, ckpt_nmbr=None):
         # Initialize augmentor.
         augmentor = img_augm.Augmentor(crop_size=[self.options.image_size, self.options.image_size],
                                        vertical_flip_prb=0.,
@@ -276,7 +275,6 @@ class Artgan(object):
                                        value_augm_shift=0.05, value_augm_scale=0.05, )
         content_dataset_places = prepare_dataset.PlacesDataset(path_to_dataset=self.options.path_to_content_dataset)
         art_dataset = prepare_dataset.ArtDataset(path_to_art_dataset=self.options.path_to_art_dataset)
-
 
         # Initialize queue workers for both datasets.
         q_art = multiprocessing.Queue(maxsize=10)
@@ -309,11 +307,11 @@ class Artgan(object):
                 print(" [!] Load failed...")
 
         # Initial discriminator success rate.
-        win_rate = args.discr_success_rate
-        discr_success = args.discr_success_rate
+        win_rate = discr_success_rate
+        discr_success = discr_success_rate
         alpha = 0.05
 
-        for step in tqdm(range(self.initial_step, self.options.total_steps+1),
+        for step in tqdm(range(self.initial_step, self.options.total_steps + 1),
                          initial=self.initial_step,
                          total=self.options.total_steps):
             # Get batch from the queue with batches q, if the last is non-empty.
@@ -353,7 +351,7 @@ class Artgan(object):
                 self.save(step, is_long=True)
 
             if step % 500 == 0:
-                output_paintings_, output_photos_= self.sess.run(
+                output_paintings_, output_photos_ = self.sess.run(
                     [self.input_painting, self.output_photo],
                     feed_dict={
                         self.input_painting: normalize_arr_of_imgs(batch_art['image']),
@@ -374,12 +372,11 @@ class Artgan(object):
         print("Done.")
 
     # Don't use this function yet.
-    def inference_video(self, args, path_to_folder, to_save_dir=None, resize_to_original=True,
+    def inference_video(self, path_to_folder, to_save_dir=None, resize_to_original=True,
                         use_time_smooth_randomness=True, ckpt_nmbr=None):
         """
         Run inference on the video frames. Original aspect ratio will be preserved.
         Args:
-            args:
             path_to_folder: path to the folder with frames from the video
             to_save_dir:
             resize_to_original:
@@ -426,9 +423,9 @@ class Artgan(object):
 
             if use_time_smooth_randomness and img_idx == 0:
                 features_delta = self.sess.run(self.labels_to_concatenate_to_features,
-                               feed_dict={
-                                   self.input_photo: normalize_arr_of_imgs(img),
-                               })
+                                               feed_dict={
+                                                   self.input_photo: normalize_arr_of_imgs(img),
+                                               })
                 features_delta_start = features_delta + np.random.random(size=features_delta.shape) * 0.5 - 0.25
                 features_delta_start = features_delta_start.clip(0, 1000)
                 print('features_delta_start.shape=', features_delta_start.shape)
@@ -457,7 +454,7 @@ class Artgan(object):
 
         print("Inference is finished.")
 
-    def inference(self, args, path_to_folder, to_save_dir=None, resize_to_original=True,
+    def inference(self, path_to_folder, to_save_dir=None, resize_to_original=True,
                   ckpt_nmbr=None):
 
         init_op = tf.global_variables_initializer()
@@ -516,7 +513,7 @@ class Artgan(object):
             os.makedirs(self.checkpoint_dir)
         if is_long:
             self.saver_long.save(self.sess,
-                                 os.path.join(self.checkpoint_long_dir, self.model_name+'_%d.ckpt' % step),
+                                 os.path.join(self.checkpoint_long_dir, self.model_name + '_%d.ckpt' % step),
                                  global_step=step)
         else:
             self.saver.save(self.sess,
