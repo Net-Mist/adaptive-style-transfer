@@ -105,6 +105,8 @@ venv.bak/
 
 *.hdf5
 *.zip
+.idea
+
 models
 logs
 evaluation/evaluation_data
