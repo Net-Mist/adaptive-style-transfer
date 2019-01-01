@@ -106,6 +106,7 @@ class PlacesDataset:
             print(category_name)
             if os.path.exists(os.path.join(path_to_dataset, category_name)):
                 for file_name in os.listdir(os.path.join(path_to_dataset, category_name)):
+                    print(file_name)
                     self.dataset.append(os.path.join(path_to_dataset, category_name, file_name))
             else:
                 print("Category %s can't be found in path %s. Skip it." %
