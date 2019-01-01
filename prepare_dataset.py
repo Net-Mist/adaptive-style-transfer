@@ -16,17 +16,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import print_function
-import pandas as pd
 import numpy as np
 import os
-import time
 from tqdm import tqdm
 import scipy.misc
-import utils
 import random
 
 
-class ArtDataset():
+class ArtDataset:
     def __init__(self, path_to_art_dataset):
 
         self.dataset = [os.path.join(path_to_art_dataset, x) for x in os.listdir(path_to_art_dataset)]
@@ -76,7 +73,7 @@ class ArtDataset():
             queue.put(batch)
 
 
-class PlacesDataset():
+class PlacesDataset:
     categories_names = \
         ['/a/abbey', '/a/arch', '/a/amphitheater', '/a/aqueduct', '/a/arena/rodeo', '/a/athletic_field/outdoor',
          '/b/badlands', '/b/balcony/exterior', '/b/bamboo_forest', '/b/barn', '/b/barndoor', '/b/baseball_field',
@@ -105,10 +102,10 @@ class PlacesDataset():
 
     def __init__(self, path_to_dataset):
         self.dataset = []
-        for category_idx, category_name in enumerate(tqdm(self.categories_names)):
-            print(category_name, category_idx)
+        for category_name in self.categories_names:
+            print(category_name)
             if os.path.exists(os.path.join(path_to_dataset, category_name)):
-                for file_name in tqdm(os.listdir(os.path.join(path_to_dataset, category_name))):
+                for file_name in os.listdir(os.path.join(path_to_dataset, category_name)):
                     self.dataset.append(os.path.join(path_to_dataset, category_name, file_name))
             else:
                 print("Category %s can't be found in path %s. Skip it." %
