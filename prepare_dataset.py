@@ -104,8 +104,12 @@ class PlacesDataset:
         self.dataset = []
         for category_name in self.categories_names:
             print(category_name)
-            if os.path.exists(os.path.join(path_to_dataset, category_name)):
-                for file_name in os.listdir(os.path.join(path_to_dataset, category_name)):
+            sub_dir = os.path.join(path_to_dataset, category_name)
+            if os.path.exists(sub_dir):
+                print("sub dir exists")
+                files = os.listdir(sub_dir)
+                print("files computed")
+                for file_name in files:
                     print(file_name)
                     self.dataset.append(os.path.join(path_to_dataset, category_name, file_name))
             else:
