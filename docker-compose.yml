@@ -1,0 +1,12 @@
+version: "2.3"
+
+services:
+  style_transfer:
+    image: style_transfer:1.0
+    build: .
+    volumes:
+      - .:/root/workspace
+      - /mnt/nas/datasets/style_transfer:/mnt/nas/datasets/style_transfer
+      - /mnt/nas/tf_experiments/style_transfer:/mnt/nas/tf_experiments/style_transfer
+    runtime: nvidia
+

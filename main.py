@@ -22,7 +22,7 @@ tf.set_random_seed(228)
 from model import Artgan
 
 
-def main(model_name='model1', phase='train', image_size=256 * 3, ptad='./data/vincent-van-gogh_road-with-cypresses-1890', ptcd=None, total_steps=int(3e5),
+def main(model_name, phase='train', image_size=256 * 3, ptad='./data/vincent-van-gogh_road-with-cypresses-1890', ptcd=None, total_steps=300000,
          batch_size=1, lr=0.0002, save_freq=1000, ngf=32, ndf=64, dlw=1., tlw=100., flw=100., dsr=0.8, ii_dir=None, save_dir=None, ckpt_nmbr=None):
     """
 
