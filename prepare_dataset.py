@@ -44,10 +44,14 @@ class ArtDataset:
         batch_image = []
 
         for _ in range(batch_size):
-            image = scipy.misc.imread(name=random.choice(self.dataset), mode='RGB')
+            image_name = random.choice(self.dataset)
+            image = scipy.misc.imread(name=image_name, mode='RGB')
 
-            if max(image.shape) > 1800.:
-                image = scipy.misc.imresize(image, size=1800. / max(image.shape))
+            try:
+                if max(image.shape) > 1800.:
+                    image = scipy.misc.imresize(image, size=1800. / max(image.shape))
+            except ValueError as e:
+                print(e, "image was", image_name)
             if max(image.shape) < 800:
                 # Resize the smallest side of the image to 800px
                 alpha = 800. / float(min(image.shape))
